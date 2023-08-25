@@ -1,0 +1,9 @@
+{
+	"name": "samsADF",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "d66c00c4-f980-4ecf-bdfa-baa44ee34446",
+		"tenantId": "d3d18101-4c65-4933-97cb-51e1569fe116"
+	}
+}
