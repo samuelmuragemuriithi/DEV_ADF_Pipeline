@@ -53,6 +53,65 @@
 						}
 					]
 				}
+			},
+			{
+				"name": "If if_procedure_Name_Not_Set",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "If if_Schedule_Name_Not_Set",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(empty(pipeline().parameters.schedule_name))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Fail_No_PROCEDURE_NAME",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Failed because the PROCEDURE_NAMEis unavailable.",
+								"errorCode": "200"
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "SP_Load_Data_Movies",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SnowflakeSource",
+									"query": "call@{pipeline().parameters.Environment}@ {activity('Get_ConfigTable').output.firstRow.PROCEDURE_NAME}('@pipeline().parameters.schedule_name')",
+									"exportSettings": {
+										"type": "SnowflakeExportCopyCommand"
+									}
+								},
+								"dataset": {
+									"referenceName": "SnowflakeTable1",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
