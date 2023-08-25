@@ -101,7 +101,7 @@
 								"source": {
 									"type": "SnowflakeSource",
 									"query": {
-										"value": "CALL @{activity('Get_ConfigTable').output.firstRow.PROCEDURE_NAME}('@{pipeline().parameters.schedule_name}');\n",
+										"value": "call @{activity('Get_ConfigTable').output.firstRow.PROCEDURE_NAME}();",
 										"type": "Expression"
 									},
 									"exportSettings": {
@@ -122,6 +122,9 @@
 			"schedule_name": {
 				"type": "string",
 				"defaultValue": "MOVIES"
+			},
+			"Environment": {
+				"type": "string"
 			}
 		},
 		"annotations": [],
