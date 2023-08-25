@@ -3,12 +3,64 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "If Condition1",
+				"name": "If if_Schedule_Name_Not_Set",
 				"type": "IfCondition",
 				"dependsOn": [],
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(empty(pipeline().parameters.schedule_name))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Fail_No shedule_name",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": "Failed because the shedule_name is unavailable.",
+								"errorCode": "200"
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Get_ConfigTable",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SnowflakeSource",
+									"query": "select PROCEDURE_NAME from AUDIT.ConfigTable where SCHEDULE_NAME = '@{pipeline().parameters.schedule_name}'and STATUS = 'A' ;",
+									"exportSettings": {
+										"type": "SnowflakeExportCopyCommand"
+									}
+								},
+								"dataset": {
+									"referenceName": "SnowflakeTable1",
+									"type": "DatasetReference"
+								}
+							}
+						}
+					]
+				}
 			}
 		],
+		"parameters": {
+			"schedule_name": {
+				"type": "string",
+				"defaultValue": "movies"
+			}
+		},
 		"annotations": [],
 		"lastPublishTime": "2023-08-25T15:22:05Z"
 	},
