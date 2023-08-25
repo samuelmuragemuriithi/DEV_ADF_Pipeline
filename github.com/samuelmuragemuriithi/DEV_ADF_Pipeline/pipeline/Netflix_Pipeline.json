@@ -1,16 +1,12 @@
 {
-	"name": "pipeline1",
+	"name": "Netflix_Pipeline",
 	"properties": {
 		"activities": [
 			{
-				"name": "Fail1",
-				"type": "Fail",
+				"name": "If Condition1",
+				"type": "IfCondition",
 				"dependsOn": [],
-				"userProperties": [],
-				"typeProperties": {
-					"message": "Failed",
-					"errorCode": "200"
-				}
+				"userProperties": []
 			}
 		],
 		"annotations": [],
