@@ -40,7 +40,7 @@
 							"typeProperties": {
 								"source": {
 									"type": "SnowflakeSource",
-									"query": "select PROCEDURE_NAME from AUDIT.ConfigTable where SCHEDULE_NAME = 'movies'and STATUS = 'A';",
+									"query": "select PROCEDURE_NAME from AUDIT.ConfigTable where SCHEDULE_NAME = '@{pipeline().parameters.schedule_name}' and STATUS = 'A' ;",
 									"exportSettings": {
 										"type": "SnowflakeExportCopyCommand"
 									}
@@ -100,7 +100,10 @@
 							"typeProperties": {
 								"source": {
 									"type": "SnowflakeSource",
-									"query": "CALL @{activity('Get_ConfigTable').output.firstRow.PROCEDURE_NAME}('@{pipeline().parameters.schedule_name}');\n",
+									"query": {
+										"value": "CALL @{activity('Get_ConfigTable').output.firstRow.PROCEDURE_NAME}('@{pipeline().parameters.schedule_name}');\n",
+										"type": "Expression"
+									},
 									"exportSettings": {
 										"type": "SnowflakeExportCopyCommand"
 									}
@@ -118,7 +121,7 @@
 		"parameters": {
 			"schedule_name": {
 				"type": "string",
-				"defaultValue": "movies"
+				"defaultValue": "MOVIES"
 			}
 		},
 		"annotations": [],
