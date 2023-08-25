@@ -1,0 +1,224 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "samsADF"
+		},
+		"SF_AUDIT_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'SF_AUDIT'"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/SF_AUDIT')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "Snowflake",
+				"typeProperties": {
+					"authenticationType": "Basic",
+					"connectionString": "[parameters('SF_AUDIT_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SnowflakeTable1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "SF_AUDIT",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "SnowflakeTable",
+				"schema": [
+					{
+						"name": "CONFIGTABLE_ID",
+						"type": "NUMBER",
+						"precision": 38,
+						"scale": 0
+					},
+					{
+						"name": "PROCEDURE_NAME",
+						"type": "VARCHAR",
+						"precision": 0,
+						"scale": 0
+					},
+					{
+						"name": "SCHEDULE_NAME",
+						"type": "VARCHAR",
+						"precision": 0,
+						"scale": 0
+					},
+					{
+						"name": "STATUS",
+						"type": "VARCHAR",
+						"precision": 0,
+						"scale": 0
+					}
+				],
+				"typeProperties": {
+					"schema": "AUDIT",
+					"table": "CONFIGTABLE"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/SF_AUDIT')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Netflix_Pipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "If if_Schedule_Name_Not_Set",
+						"type": "IfCondition",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@not(empty(pipeline().parameters.schedule_name))",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "Fail_No shedule_name",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Failed because the shedule_name is unavailable.",
+										"errorCode": "200"
+									}
+								}
+							],
+							"ifTrueActivities": [
+								{
+									"name": "Get_ConfigTable",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "SnowflakeSource",
+											"query": "select PROCEDURE_NAME from AUDIT.ConfigTable where SCHEDULE_NAME = '@{pipeline().parameters.schedule_name}' and STATUS = 'A' ;",
+											"exportSettings": {
+												"type": "SnowflakeExportCopyCommand"
+											}
+										},
+										"dataset": {
+											"referenceName": "SnowflakeTable1",
+											"type": "DatasetReference",
+											"parameters": {}
+										},
+										"firstRowOnly": true
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "If if_procedure_Name_Not_Set",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "If if_Schedule_Name_Not_Set",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@not(empty(pipeline().parameters.schedule_name))",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "Fail_No_PROCEDURE_NAME",
+									"type": "Fail",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"message": "Failed because the PROCEDURE_NAMEis unavailable.",
+										"errorCode": "200"
+									}
+								}
+							],
+							"ifTrueActivities": [
+								{
+									"name": "SP_Load_Data_Movies",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "SnowflakeSource",
+											"query": {
+												"value": "call @{activity('Get_ConfigTable').output.firstRow.PROCEDURE_NAME}();",
+												"type": "Expression"
+											},
+											"exportSettings": {
+												"type": "SnowflakeExportCopyCommand"
+											}
+										},
+										"dataset": {
+											"referenceName": "SnowflakeTable1",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"schedule_name": {
+						"type": "string",
+						"defaultValue": "MOVIES"
+					},
+					"Environment": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-08-25T15:22:05Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SnowflakeTable1')]"
+			]
+		}
+	]
+}
