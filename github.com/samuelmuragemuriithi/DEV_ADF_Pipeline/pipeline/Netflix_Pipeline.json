@@ -123,7 +123,14 @@
 			{
 				"name": "If if_procedure_Name_Not_Set_Publish",
 				"type": "IfCondition",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "If if_procedure_Name_Not_Set",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
